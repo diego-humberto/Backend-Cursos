@@ -1,9 +1,3 @@
-# Back-end | Plataforma de Receitas
-> [!NOTE]
-> Este repositório é para desenvolvedores que desejam inspecionar e/ou contribuir para o back-end da [Plataforma de Receitas](https://github.com/dragaoinvisivel/frontend-plataforma-de-receitas).
->
-> Caso você seja apenas um usuário que deseja executar o projeto em seu computador, visite o [repositório correto](https://github.com/dragaoinvisivel/frontend-plataforma-de-receitas).
-
 # Configuração e Execução
 > [!NOTE]
 > Ressaltamos novamente que este tutorial de execução é para **desenvolvedores**. Você não irá conseguir utilizar o projeto seguindo os tutoriais abaixo.

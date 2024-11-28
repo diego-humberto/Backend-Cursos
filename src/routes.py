@@ -1,12 +1,9 @@
-
 from flask import request, jsonify, send_file, abort, send_from_directory, render_template
 from werkzeug.utils import secure_filename
 import os
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 from sqlalchemy.orm import joinedload
 
-from app import app, db, Lesson, Course
+from app import app, db, Lesson, Course  # Import atualizado
 from utils import list_and_register_lessons, scan_data_directory_and_register_courses
 from video_utils import open_video
 
@@ -41,6 +38,17 @@ def list_lessons_for_course(course_id):
     } for lesson in lessons]
     
     return jsonify(response)
+
+@app.route('/api/courses/<int:course_id>/refresh', methods=['POST'])
+def refresh_course_directory(course_id):
+    course = Course.query.get_or_404(course_id)
+
+    # Reprocessar as lições do curso baseado no diretório
+    try:
+        list_and_register_lessons(course.path, course.id)
+        return jsonify({'message': 'Conteúdo do curso atualizado com sucesso'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Erro ao atualizar conteúdo: {str(e)}'}), 500
 
 
 @app.route("/serve-content", methods=['GET'])
@@ -78,7 +86,6 @@ def update_lesson_for_end_progress():
     else:
         return jsonify({'error': 'Lição não encontrada'}), 404
 
-
 @app.route('/api/courses', methods=['POST'])
 def add_course():
     name = request.form['name']
@@ -105,20 +112,19 @@ def add_course():
         fileCover=fileCover,
         urlCover=urlCover if isCoverUrl else None
     )
-    print(f"Saving course with file cover: {course.fileCover}")
+    
     db.session.add(course)
     db.session.commit()
 
-    list_and_register_lessons(request.form['path'], course.id)
+    # Adiciona as lições do curso
+    list_and_register_lessons(path, course.id)
 
     return jsonify({'id': course.id, 'name': course.name}), 201
-
 
 @app.route('/api/courses/add-all', methods=['POST'])
 def add_courses_automatically():
     scan_data_directory_and_register_courses()
     return jsonify({}), 201
-
 
 @app.route('/api/courses/<int:course_id>', methods=['GET'])
 def get_course(course_id):
@@ -128,9 +134,7 @@ def get_course(course_id):
 @app.route('/api/lessons/<int:lesson_id>', methods=['GET'])
 def get_lesson_elapsed_time(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
-    print(lesson.time_elapsed)
     return jsonify({"elapsedTime": lesson.time_elapsed}) 
-
 
 @app.route('/api/courses/<int:course_id>', methods=['PUT'])
 def update_course(course_id):
@@ -154,24 +158,20 @@ def update_course(course_id):
             image_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         else:
             course.fileCover = course.fileCover
-    print(f"Saving course with file cover: {course.fileCover}")
+    
     db.session.commit()
     if old_path != course.path:
         list_and_register_lessons(course.path, course_id)
     
-
     return jsonify({'id': course.id, 'name': course.name, 'path': course.path, 'isCoverUrl': course.isCoverUrl, 'fileCover': course.fileCover, 'urlCover': course.urlCover})
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-
 @app.route('/api/courses/<int:course_id>', methods=['DELETE'])
 def delete_course(course_id):
     course = Course.query.get_or_404(course_id)
-    print(course)
-    print(course_id)
     
     Lesson.query.filter_by(course_id=course_id).delete()
     
@@ -183,21 +183,16 @@ def delete_course(course_id):
 
     db.session.delete(course)
     db.session.commit()
-    return jsonify({'message': 'Course and associated lessons deleted'})
-
-
+    return jsonify({'message': 'Curso e lições associadas deletados'})
 
 @app.route('/api/courses/<int:course_id>/completed_percentage', methods=['GET'])
 def course_completion_percentage(course_id):
-   
     course = Course.query.get_or_404(course_id)
 
     if course is None:
         return jsonify({'error': 'Curso não encontrado'}), 404
 
-    total_lessons = len(Lesson.query \
-        .filter_by(course_id=course_id) \
-        .all())
+    total_lessons = len(Lesson.query.filter_by(course_id=course_id).all())
 
     if total_lessons == 0:
         return jsonify({'error': 'Curso não tem aulas'}), 400
@@ -207,3 +202,8 @@ def course_completion_percentage(course_id):
     completion_percentage = (completed_lessons / total_lessons) * 100
 
     return jsonify({'completion_percentage': completion_percentage})
+
+@app.route('/api/courses/update', methods=['POST'])
+def update_courses():
+    scan_data_directory_and_register_courses()
+    return jsonify({'message': 'Cursos e lições atualizados com sucesso'}), 200

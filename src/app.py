@@ -7,7 +7,7 @@ app = Flask(__name__, static_folder='../front-end/dist', static_url_path='')
 app.config.from_object(Config)
 
 db = SQLAlchemy(app)
-CORS(app)
+CORS(app)  # Habilita CORS para todas as origens
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -16,7 +16,7 @@ class Course(db.Model):
     isCoverUrl = db.Column(db.Integer, default=0)
     fileCover = db.Column(db.String(255), nullable=True)
     urlCover = db.Column(db.String(255), nullable=True)
-    
+
 class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
