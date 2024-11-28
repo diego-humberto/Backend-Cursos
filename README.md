@@ -4,8 +4,8 @@
 
 Comece clonando o repositório:
 ```bash
-git clone https://github.com/dragaoinvisivel/backend-plataforma-de-receitas.git
-cd backend-plataforma-de-receitas
+git clone https://github.com/diego-humberto/Backend-Cursos.git
+cd Backend-Cursos
 ```
 
 Com o repositório clonado, você possui duas opções para executar o servidor:
